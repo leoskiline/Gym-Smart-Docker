@@ -1,0 +1,10 @@
+.w-5{
+    width: 5%;
+}
+.obrigatorio{
+    font-size: 13px;
+}
+
+.error{
+    color: #dc3545;
+}

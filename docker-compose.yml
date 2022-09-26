@@ -1,0 +1,72 @@
+version: "3.7"
+
+networks:
+  feminina.network:
+    driver: bridge
+
+services:
+  php:
+    build: ./docker/php
+    restart: unless-stopped
+    tty: true
+    container_name: feminina.php
+    depends_on:
+      - mysql
+    networks:
+      - feminina.network
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./:/var/www/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  apache:
+     build: ./docker/apache
+     restart: unless-stopped
+     container_name: feminina.apache
+     networks:
+       - feminina.network
+     depends_on:
+       - php
+     ports:
+       - "80:80"
+       - "443:443"
+     volumes:
+       - ./:/var/www/
+
+  mysql:
+     build: ./docker/mysql
+     tty: true
+     restart: unless-stopped
+     container_name: feminina.mysql
+     networks:
+       - feminina.network
+     ports:
+       - "3306:3306"
+     volumes:
+       - "./docker/mysql/config/mysql.cnf:/etc/mysql/conf.d/custom.cnf:ro"
+       - "./docker/mysql/dbdata:/var/lib/mysql"
+       - "./migrations/feminina.sql:/docker-entrypoint-initdb.d/1.sql"
+       - "./migrations/mensaldiadeatraso.sql:/docker-entrypoint-initdb.d/2.sql"
+     environment:
+       - MYSQL_PASSWORD=root
+       - MYSQL_ROOT_PASSWORD=root
+
+
+  phpmyadmin:
+      image: library/phpmyadmin
+      container_name: feminina.phpmyadmin
+      restart: unless-stopped
+      tty: true
+      networks:
+        - feminina.network
+      depends_on:
+        - mysql
+      environment:
+        PMA_USER: root
+        PMA_PASSWORD: root
+        PMA_HOST: mysql
+        PMA_PORT: 3306
+      ports:
+        - '8080:80'
